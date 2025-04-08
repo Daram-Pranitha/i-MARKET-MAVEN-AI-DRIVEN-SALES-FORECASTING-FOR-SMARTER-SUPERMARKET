@@ -1,0 +1,234 @@
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from datetime import datetime
+# Load the dataset
+data = pd.read_csv('SuperKart.csv') # Replace with your dataset filename
+# Handle missing values
+data['Product_Weight'].fillna(data['Product_Weight'].mean(), inplace=True)
+data['Product_Sugar_Content'].fillna('Unknown', inplace=True)
+data['Product_MRP'].fillna(data['Product_MRP'].mean(), inplace=True)
+data['Store_Size'].fillna(data['Store_Size'].mode()[0], inplace=True)
+# Encode categorical variables
+encoder = LabelEncoder()
+categorical_columns = ['Product_Type', 'Store_Type', 'Store_Location_City_Type',
+'Product_Sugar_Content']
+for col in categorical_columns:
+data[col] = encoder.fit_transform(data[col])
+# Feature engineering: Calculate Store Age
+current_year = datetime.now().year
+data['Store_Age'] = current_year - data['Store_Establishment_Year']
+# Normalize numerical data
+scaler = MinMaxScaler()
+numerical_columns = ['Product_Weight', 'Product_MRP', 'Product_Store_Sales_Total']
+data[numerical_columns] = scaler.fit_transform(data[numerical_columns])
+# Save the preprocessed data to an Excel file
+output_file = 'preprocessed_data.xlsx'
+data.to_excel(output_file, index=False)
+print(f"Preprocessed data saved to {output_file}")
+Preprocessed data saved to preprocessed_data.xlsx
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from datetime import datetime
+import numpy as np
+# Load the dataset
+data = pd.read_csv('SuperKart.csv') # Replace with your dataset filename
+# Handle missing values
+data['Product_Weight'].fillna(data['Product_Weight'].mean(), inplace=True)
+data['Product_Allocated_Area'].fillna(data['Product_Allocated_Area'].mean(), inplace=True)
+data['Product_Sugar_Content'].fillna('Unknown', inplace=True) # Handle missing sugar content
+data['Product_MRP'].fillna(data['Product_MRP'].mean(), inplace=True)
+data['Store_Size'].fillna(data['Store_Size'].mode()[0], inplace=True)
+# Convert Product_Sugar_Content to numeric
+sugar_mapping = {
+'No Sugar': 0,
+'Low Sugar': 1,
+'Medium': 2,
+'High Sugar': 3,
+'Unknown': -1
+} # Define mapping
+data['Product_Sugar_Content'] = data['Product_Sugar_Content'].map(sugar_mapping)
+# Convert Store_Size to numeric
+size_mapping = {'Small': 0, 'Medium': 1, 'Large': 2, 'Unknown': -1}
+data['Store_Size'] = data['Store_Size'].map(size_mapping)
+# Encode categorical variables
+encoder = LabelEncoder()
+categorical_columns = ['Product_Type', 'Store_Type', 'Store_Location_City_Type']
+for col in categorical_columns:
+if col in data.columns:
+data[col] = encoder.fit_transform(data[col])
+# Feature engineering: Calculate Store Age
+current_year = datetime.now().year
+data['Store_Age'] = current_year - data['Store_Establishment_Year']
+# Drop irrelevant columns
+irrelevant_columns = ['Product_Id', 'Store_Id', 'Store_Establishment_Year'] # Exclude identifier
+columns
+data = data.drop(columns=irrelevant_columns)
+# Normalize numerical data
+scaler = MinMaxScaler()
+numerical_columns = ['Product_Weight', 'Product_MRP', 'Store_Age',
+'Product_Allocated_Area']
+data[numerical_columns] = scaler.fit_transform(data[numerical_columns])
+# Define features (X) and target (y)
+if 'Product_Store_Sales_Total' in data.columns:
+X = data.drop(columns=['Product_Store_Sales_Total'])
+y = data['Product_Store_Sales_Total']
+else:
+raise ValueError("'Product_Store_Sales_Total' column is missing in the dataset.")
+# Verify data types (ensure all columns are numeric)
+print("Data Types After Preprocessing:")
+print(X.dtypes)
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Train a Random Forest Regressor
+model = RandomForestRegressor(random_state=42)
+model.fit(X_train, y_train)
+# Make predictions
+y_pred = model.predict(X_test)
+# Evaluate the model
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+# Print evaluation metrics
+print("\nModel Evaluation Results:")
+print(f"Mean Absolute Error (MAE): {mae}")
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+print(f"R-squared (R2): {r2}")
+# Save predictions and evaluation results to Excel
+results = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+results_file = 'model_results.xlsx'
+results.to_excel(results_file, index=False)
+print(f"\nModel predictions and results saved to {results_file}")
+Data Types After Preprocessing:
+Product_Weight float64
+Product_Sugar_Content float64
+Product_Allocated_Area float64
+Product_Type int64
+Product_MRP float64
+Store_Size float64
+Store_Location_City_Type int64
+Store_Type int64
+Store_Age float64
+dtype: object
+Model Evaluation Results:
+Mean Absolute Error (MAE): 109.46834911580144
+Mean Squared Error (MSE): 81317.92994120122
+Root Mean Squared Error (RMSE): 285.162988378929
+R-squared (R2): 0.9287322480091669
+Model predictions and results saved to model_results.xlsx
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import pandas as pd
+import numpy as np
+from scipy.stats import zscore
+from sklearn.preprocessing import MinMaxScaler
+# Load the dataset
+data = pd.read_csv('SuperKart.csv') # Replace with your dataset file
+# Handle missing values
+data['Product_Weight'].fillna(data['Product_Weight'].mean(), inplace=True)
+data['Product_Allocated_Area'].fillna(data['Product_Allocated_Area'].mean(), inplace=True)
+data['Product_Sugar_Content'].fillna('Unknown', inplace=True
+data['Product_MRP'].fillna(data['Product_MRP'].mean(), inplace=True)
+data['Store_Size'].fillna(data['Store_Size'].mode()[0], inplace=True)
+# Map categorical string columns to numeric
+sugar_mapping = {'No Sugar': 0, 'Low Sugar': 1, 'Medium': 2, 'High Sugar': 3, 'Unknown': -1}
+data['Product_Sugar_Content'] = data['Product_Sugar_Content'].map(sugar_mapping)
+size_mapping = {'Small': 0, 'Medium': 1, 'Large': 2, 'Unknown': -1}
+data['Store_Size'] = data['Store_Size'].map(size_mapping)
+# Label encode categorical columns
+from sklearn.preprocessing import LabelEncoder
+categorical_columns = ['Product_Type', 'Store_Type', 'Store_Location_City_Type']
+encoder = LabelEncoder()
+for col in categorical_columns:
+data[col] = encoder.fit_transform(data[col])
+# Feature engineering: Add store age
+data['Store_Age'] = 2024 - data['Store_Establishment_Year']
+# Drop irrelevant columns
+data = data.drop(columns=['Product_Id', 'Store_Id', 'Store_Establishment_Year'])
+# Handle outliers using Z-score
+numerical_columns = ['Product_Weight', 'Product_Allocated_Area', 'Product_MRP',
+'Store_Age', 'Product_Store_Sales_Total']
+for col in numerical_columns:
+z_scores = zscore(data[col])
+data = data[(np.abs(z_scores) < 3)] # Keep rows where z-score is less than 3
+# Normalize numerical columns
+scaler = MinMaxScaler()
+data[numerical_columns] = scaler.fit_transform(data[numerical_columns])
+# Split data into features (X) and target (y)
+X = data.drop(columns=['Product_Store_Sales_Total'])
+y = data['Product_Store_Sales_Total']
+# Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Hyperparameter tuning for Random Forest with RandomizedSearchCV
+param_grid = {
+'n_estimators': [100, 200],
+'max_depth': [10, 20, None],
+'min_samples_split': [2, 5],
+'min_samples_leaf': [1, 2]
+}
+rf = RandomForestRegressor(random_state=42)
+random_search = RandomizedSearchCV(estimator=rf, param_distributions=param_grid,
+n_iter=10, cv=3, n_jobs=-1, scoring='r2')
+random_search.fit(X_train, y_train)
+# Best model after tuning
+best_model = random_search.best_estimator_
+# Make predictions
+y_pred = best_model.predict(X_test)
+# Evaluate the model
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+print("\nModel Evaluation After Hyperparameter Tuning:")
+print(f"Mean Absolute Error (MAE): {mae}")
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+print(f"R-squared (R2): {r2}")
+Model Evaluation After Hyperparameter Tuning:
+Mean Absolute Error (MAE): 0.016128750329528145
+Mean Squared Error (MSE): 0.0017978834237489649
+Root Mean Squared Error (RMSE): 0.042401455443757646
+R-squared (R2): 0.9335912890560294
+# Save feature combinations ranked by importance
+feature_importances = pd.DataFrame({
+'Feature': X.columns,
+'Importance': best_model.feature_importances_
+}).sort_values(by='Importance', ascending=False)
+# Cumulative importance for selecting top features
+feature_importances['Cumulative_Importance'] = feature_importances['Importance'].cumsum()
+# Select features that account for a significant portion (e.g., 95%) of importance
+selected_features = feature_importances[feature_importances['Cumulative_Importance'] <=
+0.95]
+# Save selected features to an Excel file
+selected_features_file = 'selected_feature_combinations.xlsx'
+selected_features.to_excel(selected_features_file, index=False)
+print(f"Selected feature combinations saved to {selected_features_file}")
+# Train the model again using only the selected features to validate loss reduction
+X_selected = X[selected_features['Feature']]
+X_train_selected, X_test_selected, y_train, y_test = train_test_split(X_selected, y, test_size=0.2,
+random_state=42)
+# Retrain the model with selected features
+best_model.fit(X_train_selected, y_train)
+y_pred_selected = best_model.predict(X_test_selected)
+# Evaluate the new model with reduced features
+mae_selected = mean_absolute_error(y_test, y_pred_selected)
+mse_selected = mean_squared_error(y_test, y_pred_selected)
+rmse_selected = np.sqrt(mse_selected)
+r2_selected = r2_score(y_test, y_pred_selected)
+# Save results of reduced feature model
+reduced_model_results = pd.DataFrame({
+'Metric': ['Mean Absolute Error (MAE)', 'Mean Squared Error (MSE)', 'Root Mean Squared
+Error (RMSE)', 'R-squared (R2)'],
+28
+'Value': [mae_selected, mse_selected, rmse_selected, r2_selected]
+})
+reduced_model_results_file = 'reduced_model_results.xlsx'
+reduced_model_results.to_excel(reduced_model_results_file, index=False)
+print(f"Reduced feature model results saved to {reduced_model_results_file}")
+Selected feature combinations saved to selected_feature_combinations.xlsx
+Reduced feature model results saved to reduced_model_results.xlsx
